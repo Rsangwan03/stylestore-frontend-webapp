@@ -29,10 +29,18 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
+      - name: List output after build
+        run: ls -R
+
       - name: Zip build folder for deployment
         run: |
-          cd build
-          zip -r ../release.zip .
+          if [ -d "build" ]; then
+            cd build
+            zip -r ../release.zip .
+          else
+            echo "❌ Build folder not found! Check build output or your framework."
+            exit 1
+          fi
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -47,8 +55,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write # Required for JWT
-      contents: read
+      id-token: write # Required for requesting the JWT
+      contents: read # Required for actions/checkout
 
     steps:
       - name: Download artifact from build job
@@ -66,7 +74,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A561C78D453C4954BC7AA80398DFF5B8 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C30B1BC06F5F41C8A759A47153FB5D27 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
